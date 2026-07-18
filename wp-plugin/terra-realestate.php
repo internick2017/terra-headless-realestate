@@ -12,3 +12,6 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 require_once __DIR__ . '/includes/class-cpt.php';
 
 add_action( 'init', array( 'Terra_CPT', 'register' ) );
+
+require_once __DIR__ . '/includes/class-fields.php';
+add_action( 'acf/init', array( 'Terra_Fields', 'register' ) );
