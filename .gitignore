@@ -1,0 +1,10 @@
+# Node
+frontend/node_modules/
+frontend/.next/
+frontend/.env*.local
+# WP dev
+wp-plugin/dev/wp-data/
+wp-plugin/vendor/
+# OS
+.DS_Store
+Thumbs.db
