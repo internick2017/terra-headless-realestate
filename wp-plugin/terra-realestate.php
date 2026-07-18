@@ -15,3 +15,6 @@ add_action( 'init', array( 'Terra_CPT', 'register' ) );
 
 require_once __DIR__ . '/includes/class-fields.php';
 add_action( 'acf/init', array( 'Terra_Fields', 'register' ) );
+
+require_once __DIR__ . '/includes/class-i18n.php';
+add_filter( 'pll_get_post_types', array( 'Terra_I18n', 'translatable_post_types' ), 10, 1 );
