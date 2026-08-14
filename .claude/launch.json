@@ -3,9 +3,12 @@
   "configurations": [
     {
       "name": "terra",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["--cwd", "frontend", "dev"],
-      "port": 3000
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "cd /d frontend && node node_modules/next/dist/bin/next dev --port 3001"
+      ],
+      "port": 3001
     }
   ]
 }
