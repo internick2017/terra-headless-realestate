@@ -57,3 +57,20 @@ export async function getFeaturedProperties(locale: Locale, first = 6): Promise<
   // server rather than as undefined leaking into the markup.
   return data.properties.nodes.map((node) => PropertySchema.parse(node))
 }
+
+/**
+ * The whole catalogue for the requested language. The demo has a handful of
+ * listings, so the listings page fetches them once and filters in memory rather
+ * than issuing a query per filter change: instant filtering, and the filter
+ * logic stays a pure function.
+ *
+ * A real catalogue would move the criteria into the GraphQL `where` argument.
+ */
+export async function getAllProperties(locale: Locale, first = 100): Promise<Property[]> {
+  const data = await wpQuery<{ properties: { nodes: unknown[] } }>(PROPERTIES_QUERY, {
+    language: toPllLang(locale),
+    first,
+  })
+
+  return data.properties.nodes.map((node) => PropertySchema.parse(node))
+}
