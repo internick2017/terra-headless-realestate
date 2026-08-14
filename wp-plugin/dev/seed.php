@@ -19,6 +19,9 @@ if ( ! defined( 'WP_CLI' ) ) {
 	exit( 1 );
 }
 
+// Gallery artwork is drawn locally rather than downloaded; see images.php.
+require_once __DIR__ . '/images.php';
+
 /* ---------------------------------------------------------------------
  * Helpers
  * ------------------------------------------------------------------- */
@@ -423,7 +426,21 @@ foreach ( $properties as $p ) {
 	$existing_pt = terra_seed_find_by_key( $pt_key, 'property' );
 
 	if ( $existing_en && $existing_pt ) {
-		WP_CLI::log( "Skipping property '{$p['en']['title']}' (already seeded: EN #{$existing_en}, PT #{$existing_pt})" );
+		// The post already exists, but galleries were added to this script later,
+		// so top them up rather than leaving older seeds without images.
+		$gallery_ids = terra_img_attach_gallery(
+			$p['seed_key'],
+			$p['en']['title'],
+			$p['fields']['propertyType']
+		);
+		foreach ( array( $existing_en, $existing_pt ) as $post_id ) {
+			update_field( 'gallery', $gallery_ids, $post_id );
+		}
+
+		WP_CLI::log(
+			"Skipping property '{$p['en']['title']}' (already seeded: EN #{$existing_en}, PT #{$existing_pt}); "
+			. count( $gallery_ids ) . ' gallery image(s) ensured'
+		);
 		$skipped_properties++;
 		continue;
 	}
@@ -434,6 +451,10 @@ foreach ( $properties as $p ) {
 	terra_seed_link_post_translations( $en_id, $pt_id );
 
 	$fields = $p['fields'];
+
+	// One set of images per property, shared by both languages: it is the same
+	// building whichever language you read about it in.
+	$gallery_ids = terra_img_attach_gallery( $p['seed_key'], $p['en']['title'], $fields['propertyType'] );
 
 	// Fields shared between the EN and PT posts (price, specs, agent, coordinates, ...).
 	foreach ( array( $en_id, $pt_id ) as $post_id ) {
@@ -449,7 +470,7 @@ foreach ( $properties as $p ) {
 		update_field( 'status', $fields['status'], $post_id );
 		update_field( 'agentName', $fields['agentName'], $post_id );
 		update_field( 'agentEmail', $fields['agentEmail'], $post_id );
-		// gallery intentionally left empty for the seed; no demo images imported.
+		update_field( 'gallery', $gallery_ids, $post_id );
 	}
 
 	// Language-specific text fields.
