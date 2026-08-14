@@ -51,7 +51,8 @@ const en = {
     bedrooms: 'Bedrooms',
     any: 'Any',
     clear: 'Clear filters',
-    results: 'properties found',
+    resultsOne: 'property found',
+    resultsMany: 'properties found',
     empty: 'No properties match these filters.',
   },
   lead: {
@@ -114,7 +115,8 @@ const pt: Dict = {
     bedrooms: 'Quartos',
     any: 'Qualquer',
     clear: 'Limpar filtros',
-    results: 'imóveis encontrados',
+    resultsOne: 'imóvel encontrado',
+    resultsMany: 'imóveis encontrados',
     empty: 'Nenhum imóvel corresponde a esses filtros.',
   },
   lead: {
@@ -133,6 +135,11 @@ const pt: Dict = {
 }
 
 const dictionaries: Record<Locale, Dict> = { en, pt }
+
+/** English and Portuguese share the same one-vs-many split, so a count is enough. */
+export function resultsLabel(dict: Dict, count: number): string {
+  return count === 1 ? dict.filters.resultsOne : dict.filters.resultsMany
+}
 
 export function getDict(locale: Locale): Dict {
   return dictionaries[locale]

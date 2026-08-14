@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDict, withLocale } from './i18n'
+import { getDict, resultsLabel, withLocale } from './i18n'
 
 describe('withLocale', () => {
   it('swaps the leading locale segment', () => {
@@ -35,5 +35,18 @@ describe('getDict', () => {
         : [path]
 
     expect(walk(getDict('pt')).sort()).toEqual(walk(getDict('en')).sort())
+  })
+})
+
+describe('resultsLabel', () => {
+  it('uses the singular for exactly one result', () => {
+    expect(resultsLabel(getDict('en'), 1)).toBe('property found')
+    expect(resultsLabel(getDict('pt'), 1)).toBe('imóvel encontrado')
+  })
+
+  it('uses the plural for none and for many', () => {
+    expect(resultsLabel(getDict('en'), 0)).toBe('properties found')
+    expect(resultsLabel(getDict('en'), 8)).toBe('properties found')
+    expect(resultsLabel(getDict('pt'), 8)).toBe('imóveis encontrados')
   })
 })

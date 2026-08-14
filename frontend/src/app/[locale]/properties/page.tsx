@@ -1,13 +1,17 @@
 import { notFound } from 'next/navigation'
-import { Suspense } from 'react'
 import { PropertyCard } from '@/components/property-card'
 import { PropertyFilters } from '@/components/property-filters'
 import { filterProperties, parseFilters } from '@/lib/filter'
-import { getDict } from '@/lib/i18n'
+import { getDict, resultsLabel } from '@/lib/i18n'
 import { getAllProperties } from '@/lib/queries'
 import { isLocale } from '@/lib/types'
 
-export const revalidate = 60
+/**
+ * Reading searchParams makes this route server-rendered on demand, so it is
+ * never prerendered and useSearchParams needs no Suspense boundary in the
+ * filters. Wrapping them in one actively broke them: the subtree rendered but
+ * never hydrated, so the controls moved and nothing happened.
+ */
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -53,13 +57,10 @@ export default async function PropertiesPage({
     <>
       <h1 className="mb-6 text-3xl font-semibold tracking-tight">{dict.nav.properties}</h1>
 
-      {/* useSearchParams needs a Suspense boundary when the page is prerendered. */}
-      <Suspense fallback={null}>
-        <PropertyFilters dict={dict} neighborhoods={neighborhoods} />
-      </Suspense>
+      <PropertyFilters dict={dict} neighborhoods={neighborhoods} />
 
       <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
-        {visible.length} {dict.filters.results}
+        {visible.length} {resultsLabel(dict, visible.length)}
       </p>
 
       {visible.length === 0 ? (
