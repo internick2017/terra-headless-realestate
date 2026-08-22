@@ -1,7 +1,6 @@
 import {
   PropertyDetailSchema,
   PropertySchema,
-  fromPllLang,
   toPllLang,
   type Locale,
   type Property,
@@ -91,6 +90,12 @@ export const PROPERTY_QUERY = `
         language {
           code
         }
+        translations {
+          slug
+          language {
+            code
+          }
+        }
         ${PROPERTY_FIELDS}
       }
     }
@@ -98,34 +103,24 @@ export const PROPERTY_QUERY = `
 `
 
 /**
- * One listing, by slug, within a language.
+ * One listing, by slug, in whatever language it happens to be.
  *
- * The language is NOT part of the query, and that is deliberate: passing both
- * `language` and `name` to the connection was measured against the running CMS
- * and `name` wins outright — `where: { language: PT, name: "riverside-villa" }`
- * cheerfully returns the English post. Polylang's filter is simply not applied
- * once a post name is in play.
+ * The language is deliberately not in the query. Passing both `language` and
+ * `name` to the connection was measured against the running CMS and `name`
+ * wins outright — `where: { language: PT, name: "riverside-villa" }` cheerfully
+ * returns the English post. Polylang's filter is simply not applied once a post
+ * name is in play, so filtering here would be a lie either way.
  *
- * So the check lives here instead, where it can be seen and tested: ask by
- * slug, then confirm the post WordPress handed back is in the language the URL
- * claimed. Without it, /pt/properties/<english-slug> would render English
- * copy inside Portuguese chrome.
- *
- * Returns null when nothing matches or the language is wrong, so the page can
- * call notFound() rather than throw on a URL a visitor simply mistyped.
+ * Instead the answer carries its own language and its translations, and
+ * resolvePropertyRoute decides what the page should do with it. Returns null
+ * only when no listing anywhere has that slug.
  */
-export async function getProperty(locale: Locale, slug: string): Promise<PropertyDetail | null> {
+export async function getProperty(slug: string): Promise<PropertyDetail | null> {
   const data = await wpQuery<{ properties: { nodes: unknown[] } }>(PROPERTY_QUERY, { slug })
 
   const node = data.properties.nodes[0]
 
-  if (!node) {
-    return null
-  }
-
-  const property = PropertyDetailSchema.parse(node)
-
-  return fromPllLang(property.languageCode) === locale ? property : null
+  return node ? PropertyDetailSchema.parse(node) : null
 }
 
 export const PROPERTY_SLUGS_QUERY = `

@@ -111,13 +111,62 @@ export const PropertyDetailSchema = PropertyNodeSchema.extend({
     .object({ code: z.string() })
     .nullable()
     .transform((value) => value?.code ?? null),
-}).transform(({ title, slug, content, language, propertyFields }) => ({
+
+  // The same listing in the other language. Polylang keeps translations as
+  // separate posts with their own slugs, so this is the only way to get from
+  // one to the other.
+  translations: z
+    .array(
+      z.object({
+        slug: z.string(),
+        language: z
+          .object({ code: z.string() })
+          .nullable()
+          .transform((value) => value?.code ?? null),
+      }),
+    )
+    .nullable()
+    .transform((value) => value ?? []),
+}).transform(({ title, slug, content, language, translations, propertyFields }) => ({
   title,
   slug,
   content,
   languageCode: language,
+  translations: translations.map((translation) => ({
+    slug: translation.slug,
+    languageCode: translation.language,
+  })),
   ...propertyFields,
 }))
+
+/**
+ * What to do with a listing the CMS returned, given the locale in the URL.
+ *
+ * Split out as a pure function because the rule is not obvious and is worth
+ * testing: a slug belonging to the other language is not a mistake to punish
+ * with a 404, it is the visitor asking for this listing in a language they can
+ * read — most often by clicking the language switcher, which knows how to swap
+ * the locale segment but not how to translate a slug.
+ */
+export type PropertyRoute =
+  | { action: 'render' }
+  | { action: 'redirect'; slug: string }
+  | { action: 'notFound' }
+
+export function resolvePropertyRoute(
+  property: { languageCode: string | null; translations: { slug: string; languageCode: string | null }[] },
+  locale: Locale,
+): PropertyRoute {
+  if (fromPllLang(property.languageCode) === locale) {
+    return { action: 'render' }
+  }
+
+  const translation = property.translations.find(
+    (candidate) => fromPllLang(candidate.languageCode) === locale,
+  )
+
+  return translation ? { action: 'redirect', slug: translation.slug } : { action: 'notFound' }
+}
 
 export type PropertyDetail = z.infer<typeof PropertyDetailSchema>
 

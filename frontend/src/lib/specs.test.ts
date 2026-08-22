@@ -11,6 +11,7 @@ function property(overrides: Partial<PropertyDetail> = {}): PropertyDetail {
     slug: 'casa-aurora',
     content: null,
     languageCode: 'EN',
+    translations: [],
     price: 450000,
     currency: 'USD',
     operation: 'sale',

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { PropertyDetailSchema, PropertySchema, fromPllLang, isLocale, toPllLang } from './types'
+import {
+  PropertyDetailSchema,
+  PropertySchema,
+  fromPllLang,
+  isLocale,
+  resolvePropertyRoute,
+  toPllLang,
+} from './types'
 
 /**
  * Shaped after a real response from the local WordPress: ACF selects arrive as
@@ -129,6 +136,7 @@ describe('PropertyDetailSchema', () => {
     ...landLotNode,
     content: '<p>A riverside lot.</p>',
     language: { code: 'EN' },
+    translations: [],
   }
 
   it('keeps the body and the language alongside the flattened fields', () => {
@@ -150,12 +158,59 @@ describe('PropertyDetailSchema', () => {
     expect(property.languageCode).toBeNull()
   })
 
-  it('rejects the language of a post that is not the one the URL asked for', () => {
-    // The guard getProperty applies: WordPress ignores the language filter once
-    // a post name is in the query, so the answer has to be checked here.
-    const english = PropertyDetailSchema.parse(detailNode)
+  it('flattens the translations into slugs and language codes', () => {
+    const property = PropertyDetailSchema.parse({
+      ...detailNode,
+      translations: [{ slug: 'lote-na-beira-rio', language: { code: 'PT' } }],
+    })
 
-    expect(fromPllLang(english.languageCode) === 'pt').toBe(false)
-    expect(fromPllLang(english.languageCode) === 'en').toBe(true)
+    expect(property.translations).toEqual([{ slug: 'lote-na-beira-rio', languageCode: 'PT' }])
+  })
+
+  it('treats a listing with no translations as having none, not as broken', () => {
+    expect(PropertyDetailSchema.parse({ ...detailNode, translations: null }).translations).toEqual(
+      [],
+    )
+  })
+})
+
+describe('resolvePropertyRoute', () => {
+  const english = {
+    languageCode: 'EN',
+    translations: [{ slug: 'vila-na-beira-rio', languageCode: 'PT' }],
+  }
+
+  it('renders when the URL already asks for the language the listing is in', () => {
+    expect(resolvePropertyRoute(english, 'en')).toEqual({ action: 'render' })
+  })
+
+  it('redirects to the translation when the URL asks for the other language', () => {
+    // What the language switcher produces: it swaps /en for /pt but leaves the
+    // English slug in place, so this is the common case, not an edge one.
+    expect(resolvePropertyRoute(english, 'pt')).toEqual({
+      action: 'redirect',
+      slug: 'vila-na-beira-rio',
+    })
+  })
+
+  it('404s when the listing has no version in the requested language', () => {
+    expect(resolvePropertyRoute({ languageCode: 'EN', translations: [] }, 'pt')).toEqual({
+      action: 'notFound',
+    })
+  })
+
+  it('404s rather than guessing when the listing has no language at all', () => {
+    expect(resolvePropertyRoute({ languageCode: null, translations: [] }, 'en')).toEqual({
+      action: 'notFound',
+    })
+  })
+
+  it('ignores a translation in a language the site does not ship', () => {
+    const withFrench = {
+      languageCode: 'EN',
+      translations: [{ slug: 'villa-au-bord-de-riviere', languageCode: 'FR' }],
+    }
+
+    expect(resolvePropertyRoute(withFrench, 'pt')).toEqual({ action: 'notFound' })
   })
 })

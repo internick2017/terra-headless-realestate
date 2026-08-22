@@ -1,13 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { LeadForm } from '@/components/lead-form'
 import { PropertyGallery } from '@/components/property-gallery'
 import { PropertyMap } from '@/components/property-map'
 import { formatPrice } from '@/lib/format'
 import { getDict } from '@/lib/i18n'
 import { getPropertySlugs, getProperty } from '@/lib/queries'
 import { propertySpecs } from '@/lib/specs'
-import { LOCALES, isLocale, type PropertyDetail } from '@/lib/types'
+import {
+  LOCALES,
+  fromPllLang,
+  isLocale,
+  resolvePropertyRoute,
+  type PropertyDetail,
+} from '@/lib/types'
 
 /**
  * ISR: listings change rarely, so every visitor gets a static page, and an edit
@@ -31,7 +38,14 @@ export async function generateStaticParams() {
   return perLocale.flat()
 }
 
-/** Resolve and validate the route in one place, for the page and its metadata. */
+/**
+ * Resolve and validate the route in one place, for the page and its metadata.
+ *
+ * Returns the property only when this URL is the right one for it; a slug from
+ * the other language comes back as a redirect for the page to follow, which is
+ * what makes the language switcher work on a detail page — it can swap the
+ * locale segment, but it cannot translate a slug.
+ */
 async function load(params: Promise<{ locale: string; slug: string }>) {
   const { locale, slug } = await params
 
@@ -39,9 +53,23 @@ async function load(params: Promise<{ locale: string; slug: string }>) {
     return null
   }
 
-  const property = await getProperty(locale, slug)
+  const property = await getProperty(slug)
 
-  return property ? { locale, property } : null
+  if (!property) {
+    return null
+  }
+
+  const route = resolvePropertyRoute(property, locale)
+
+  if (route.action === 'notFound') {
+    return null
+  }
+
+  if (route.action === 'redirect') {
+    return { locale, property, redirectTo: `/${locale}/properties/${route.slug}` }
+  }
+
+  return { locale, property, redirectTo: null }
 }
 
 /**
@@ -72,16 +100,37 @@ export async function generateMetadata({
     return {}
   }
 
-  const { locale, property } = loaded
+  const { locale, property, redirectTo } = loaded
+
+  if (redirectTo) {
+    return {}
+  }
+
   const dict = getDict(locale)
   const cover = property.gallery[0]
+  const description = toDescription(property, dict.tagline)
+
+  // hreflang, built from Polylang's own links rather than by swapping the
+  // locale segment: the translated listing has its own slug.
+  const languages: Record<string, string> = {
+    [locale]: `/${locale}/properties/${property.slug}`,
+  }
+
+  for (const translation of property.translations) {
+    const other = fromPllLang(translation.languageCode)
+
+    if (other) {
+      languages[other] = `/${other}/properties/${translation.slug}`
+    }
+  }
 
   return {
     title: property.title,
-    description: toDescription(property, dict.tagline),
+    description,
+    alternates: { canonical: languages[locale], languages },
     openGraph: {
       title: property.title,
-      description: toDescription(property, dict.tagline),
+      description,
       images: cover ? [{ url: cover.sourceUrl, alt: cover.altText ?? property.title }] : undefined,
     },
   }
@@ -100,7 +149,14 @@ export default async function PropertyPage({
     notFound()
   }
 
-  const { locale, property } = loaded
+  const { locale, property, redirectTo } = loaded
+
+  // The visitor asked for this listing in the other language: send them to its
+  // own URL rather than serving the same page under two addresses.
+  if (redirectTo) {
+    redirect(redirectTo)
+  }
+
   const dict = getDict(locale)
   const specs = propertySpecs(property, dict, locale)
   const price = formatPrice(property.price, property.currency, locale)
@@ -172,6 +228,16 @@ export default async function PropertyPage({
               </dl>
             </section>
           ) : null}
+
+          <section className="rounded-xl border border-stone-200 p-5 dark:border-stone-800">
+            <h2 className="mb-4 text-lg font-semibold">{dict.lead.title}</h2>
+            <LeadForm
+              propertySlug={property.slug}
+              propertyTitle={property.title}
+              locale={locale}
+              dict={dict}
+            />
+          </section>
 
           {property.agentName ? (
             <section className="rounded-xl border border-stone-200 p-5 dark:border-stone-800">

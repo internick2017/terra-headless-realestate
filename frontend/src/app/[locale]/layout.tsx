@@ -33,6 +33,11 @@ export async function generateMetadata({
   const dict = getDict(locale)
 
   return {
+    // hreflang and Open Graph need absolute URLs; without a base, Next emits
+    // the relative paths the pages declare and search engines ignore them.
+    // Localhost is the right default for the only place the variable is
+    // usually unset.
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
     title: { default: dict.brand, template: `%s · ${dict.brand}` },
     description: dict.tagline,
   }
