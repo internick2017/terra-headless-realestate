@@ -78,10 +78,10 @@ npx tsc --noEmit
 ## Status
 
 Built: the CMS and its content model, the bilingual seed with images, the typed GraphQL client,
-locale routing with a language switcher, and the home page.
+locale routing with a language switcher, the home page, the listings page with URL-driven
+filters, and property detail pages with a gallery and a location map.
 
-Next: the listings page with filters, property detail pages, the lead form, neighborhood
-articles, then SEO and deployment.
+Next: the lead form, neighborhood articles, then SEO and deployment.
 
 ## License
 

@@ -8,3 +8,5 @@ wp-plugin/vendor/
 # OS
 .DS_Store
 Thumbs.db
+# Tooling scratch
+.superpowers/
