@@ -3,21 +3,31 @@
  * Seeds bilingual (EN/PT) demo content for Terra: property listings and neighborhood
  * articles, linked as Polylang translations.
  *
- * Run through WP-CLI from wp-plugin/dev:
- *   docker compose exec -T wpcli wp --allow-root eval-file wp-content/plugins/terra-realestate/dev/seed.php
+ * Two ways in, running the same code either way:
+ *   - WP-CLI, from wp-plugin/dev:
+ *       docker compose exec -T wpcli wp --allow-root eval-file
+ *         /var/www/html/wp-content/plugins/terra-realestate/dev/seed.php
+ *   - Tools -> Terra demo content in wp-admin, for a host with no shell.
  *
- * Idempotent: every post and term created here carries a `_terra_seed_key` meta value.
- * Re-running the script looks up that key first and skips anything already seeded instead
- * of creating duplicates.
+ * The second exists because shared hosting is where a demo like this ends up, and it
+ * does not give you WP-CLI. Output goes through Terra_Seed_Output, which prints to the
+ * terminal or collects for the admin page depending on where it is running.
+ *
+ * Declarative rather than write-once: every post and term carries a `_terra_seed_key`
+ * meta value, so nothing is ever duplicated, but the fields hanging off a post are
+ * re-applied on every run. Editing this file and re-running reconciles the database
+ * with it.
  *
  * Polylang free ships no WP-CLI commands, so language and translation-linking are done
  * through Polylang's own PHP API (the same functions the admin UI calls), not `wp pll`.
  */
 
-if ( ! defined( 'WP_CLI' ) ) {
-	echo "This script must be run through WP-CLI (wp eval-file).\n";
+if ( ! defined( 'ABSPATH' ) ) {
+	echo "This script runs inside WordPress: through WP-CLI, or from Tools -> Terra demo content.";
 	exit( 1 );
 }
+
+require_once __DIR__ . '/../includes/class-seed-output.php';
 
 // Gallery artwork is drawn locally rather than downloaded; see images.php.
 require_once __DIR__ . '/images.php';
@@ -104,7 +114,7 @@ function terra_seed_insert_post( $seed_key, $post_type, $title, $content, $lang 
 	);
 
 	if ( is_wp_error( $id ) ) {
-		WP_CLI::error( "Failed to insert post '{$title}': " . $id->get_error_message() );
+		Terra_Seed_Output::error( "Failed to insert post '{$title}': " . $id->get_error_message() );
 	}
 
 	update_post_meta( $id, '_terra_seed_key', $seed_key );
@@ -152,7 +162,7 @@ function terra_seed_category( $seed_key, $name, $lang ) {
 
 	$term = wp_insert_term( $name, 'category' );
 	if ( is_wp_error( $term ) ) {
-		WP_CLI::error( "Failed to insert category '{$name}': " . $term->get_error_message() );
+		Terra_Seed_Output::error( "Failed to insert category '{$name}': " . $term->get_error_message() );
 	}
 	$term_id = (int) $term['term_id'];
 	update_term_meta( $term_id, '_terra_seed_key', $seed_key );
@@ -491,10 +501,10 @@ foreach ( $properties as $p ) {
 	terra_seed_apply_property_fields( $en_id, $pt_id, $p );
 
 	if ( $already_seeded ) {
-		WP_CLI::log( "Refreshed property '{$p['en']['title']}' (EN #{$en_id} / PT #{$pt_id})" );
+		Terra_Seed_Output::log( "Refreshed property '{$p['en']['title']}' (EN #{$en_id} / PT #{$pt_id})" );
 		$skipped_properties++;
 	} else {
-		WP_CLI::log( "Seeded property '{$p['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
+		Terra_Seed_Output::log( "Seeded property '{$p['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
 		$seeded_properties++;
 	}
 }
@@ -539,7 +549,7 @@ foreach ( $neighborhoods as $n ) {
 	$existing_pt = terra_seed_find_by_key( $pt_key, 'post' );
 
 	if ( $existing_en && $existing_pt ) {
-		WP_CLI::log( "Skipping neighborhood '{$n['en']['title']}' (already seeded: EN #{$existing_en}, PT #{$existing_pt})" );
+		Terra_Seed_Output::log( "Skipping neighborhood '{$n['en']['title']}' (already seeded: EN #{$existing_en}, PT #{$existing_pt})" );
 		$skipped_neighborhoods++;
 		continue;
 	}
@@ -552,11 +562,11 @@ foreach ( $neighborhoods as $n ) {
 	wp_set_post_categories( $en_id, array( $cat_en ) );
 	wp_set_post_categories( $pt_id, array( $cat_pt ) );
 
-	WP_CLI::log( "Seeded neighborhood '{$n['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
+	Terra_Seed_Output::log( "Seeded neighborhood '{$n['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
 	$seeded_neighborhoods++;
 }
 
-WP_CLI::success(
+Terra_Seed_Output::success(
 	sprintf(
 		'Seeded %d properties (EN+PT) and %d neighborhoods (EN+PT). Skipped %d properties and %d neighborhoods already seeded.',
 		$seeded_properties,

@@ -255,7 +255,7 @@ function terra_img_attach_gallery( $slug, $title, $type, $count = 3 ) {
 		$upload = wp_upload_bits( "{$slug}-{$i}.jpg", null, $bytes );
 
 		if ( ! empty( $upload['error'] ) ) {
-			WP_CLI::warning( "Could not write image for {$slug} #{$i}: {$upload['error']}" );
+			Terra_Seed_Output::warning( "Could not write image for {$slug} #{$i}: {$upload['error']}" );
 			continue;
 		}
 
@@ -273,7 +273,7 @@ function terra_img_attach_gallery( $slug, $title, $type, $count = 3 ) {
 		);
 
 		if ( is_wp_error( $id ) ) {
-			WP_CLI::warning( "Could not attach image for {$slug} #{$i}: " . $id->get_error_message() );
+			Terra_Seed_Output::warning( "Could not attach image for {$slug} #{$i}: " . $id->get_error_message() );
 			continue;
 		}
 

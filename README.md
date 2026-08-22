@@ -90,11 +90,23 @@ The two halves deploy independently, and the order matters: the front end querie
 **build** time (`generateStaticParams`, the sitemap, `/llms.txt`), so a Vercel build against a
 WordPress that is only reachable on localhost fails rather than degrading.
 
-**1. WordPress, on a public host.** A subdomain, a normal WordPress install, then the four
-plugins this project needs, WPGraphQL, ACF, Polylang, and WPGraphQL for Polylang, plus the
-`terra-realestate` plugin from `wp-plugin/`. `dev/setup.sh` names the exact plugin slugs and is
-the reference for what has to be present. Run `dev/seed.php` through WP-CLI once the plugins are
-active. Confirm `https://<subdomain>/graphql` answers before going further.
+**1. WordPress, on a public host.** A subdomain and a normal WordPress install, then five
+plugins, in this order:
+
+| Plugin | Where from |
+| --- | --- |
+| `wp-graphql` | WordPress.org |
+| `advanced-custom-fields` | WordPress.org |
+| `polylang` | WordPress.org |
+| `wpgraphql-acf` | WordPress.org (not a GitHub zip: those ship without the Composer autoloader and fatal) |
+| `wp-graphql-polylang` | [v0.7.1 release zip](https://github.com/valu-digital/wp-graphql-polylang/archive/refs/tags/v0.7.1.zip) — not on WordPress.org; pin the tag rather than master |
+
+Then upload `wp-plugin/` as the `terra-realestate` plugin and activate it, set permalinks to
+**Post name**, and run **Tools → Terra demo content → Seed demo content**. That page creates the
+two Polylang languages and the demo content; it is the same code `dev/seed.php` runs under
+WP-CLI, and exists because shared hosting has no shell. It is safe to run twice.
+
+Confirm `https://<subdomain>/graphql` answers before going further.
 
 **2. Next.js, on Vercel.** Import the repository, set the root directory to `frontend/`, and set:
 

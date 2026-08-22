@@ -18,3 +18,7 @@ add_action( 'acf/init', array( 'Terra_Fields', 'register' ) );
 
 require_once __DIR__ . '/includes/class-i18n.php';
 add_filter( 'pll_get_post_types', array( 'Terra_I18n', 'translatable_post_types' ), 10, 1 );
+
+require_once __DIR__ . '/includes/class-seed-output.php';
+require_once __DIR__ . '/includes/class-admin.php';
+add_action( 'admin_menu', array( 'Terra_Admin', 'register' ) );
