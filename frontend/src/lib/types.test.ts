@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PropertySchema, isLocale, toPllLang } from './types'
+import { PropertyDetailSchema, PropertySchema, fromPllLang, isLocale, toPllLang } from './types'
 
 /**
  * Shaped after a real response from the local WordPress: ACF selects arrive as
@@ -100,5 +100,62 @@ describe('locales', () => {
   it('maps a route locale to the Polylang enum', () => {
     expect(toPllLang('en')).toBe('EN')
     expect(toPllLang('pt')).toBe('PT')
+  })
+})
+
+describe('fromPllLang', () => {
+  it('maps a Polylang code back to our locale', () => {
+    expect(fromPllLang('EN')).toBe('en')
+    expect(fromPllLang('PT')).toBe('pt')
+  })
+
+  it('accepts a code that is already lowercase', () => {
+    expect(fromPllLang('pt')).toBe('pt')
+  })
+
+  it('rejects a language the site does not ship', () => {
+    expect(fromPllLang('FR')).toBeNull()
+  })
+
+  it('rejects a missing language rather than guessing a default', () => {
+    // A post with no language must not silently pass as English: that is the
+    // whole point of the check in getProperty.
+    expect(fromPllLang(null)).toBeNull()
+  })
+})
+
+describe('PropertyDetailSchema', () => {
+  const detailNode = {
+    ...landLotNode,
+    content: '<p>A riverside lot.</p>',
+    language: { code: 'EN' },
+  }
+
+  it('keeps the body and the language alongside the flattened fields', () => {
+    const property = PropertyDetailSchema.parse(detailNode)
+
+    expect(property.content).toBe('<p>A riverside lot.</p>')
+    expect(property.languageCode).toBe('EN')
+    expect(property.areaM2).toBe(5000)
+  })
+
+  it('survives a post with no body and no language', () => {
+    const property = PropertyDetailSchema.parse({
+      ...detailNode,
+      content: null,
+      language: null,
+    })
+
+    expect(property.content).toBeNull()
+    expect(property.languageCode).toBeNull()
+  })
+
+  it('rejects the language of a post that is not the one the URL asked for', () => {
+    // The guard getProperty applies: WordPress ignores the language filter once
+    // a post name is in the query, so the answer has to be checked here.
+    const english = PropertyDetailSchema.parse(detailNode)
+
+    expect(fromPllLang(english.languageCode) === 'pt').toBe(false)
+    expect(fromPllLang(english.languageCode) === 'en').toBe(true)
   })
 })

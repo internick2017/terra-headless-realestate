@@ -15,6 +15,18 @@ export function toPllLang(locale: Locale): 'EN' | 'PT' {
 }
 
 /**
+ * The reverse: a Polylang language code back to one of our locales, or null for
+ * anything we do not ship. Used to check that a post WordPress returned really
+ * is in the language the URL asked for — see getProperty, where the CMS cannot
+ * be trusted to have filtered.
+ */
+export function fromPllLang(code: string | null): Locale | null {
+  const lower = code?.toLowerCase() ?? ''
+
+  return isLocale(lower) ? lower : null
+}
+
+/**
  * ACF select fields come back from WPGraphQL as arrays, even when the field
  * holds a single choice — `currency: ["BRL"]` rather than `currency: "BRL"`.
  * Unwrap to the first entry before validating against the allowed values.
@@ -66,23 +78,48 @@ const PropertyFieldsSchema = z.object({
   agentEmail: z.string().nullable(),
 })
 
+/** The GraphQL node as it arrives, before the fields are flattened. */
+const PropertyNodeSchema = z.object({
+  title: z.string(),
+  slug: z.string(),
+  propertyFields: PropertyFieldsSchema,
+})
+
 /**
  * A property as the UI wants it: the GraphQL node flattened, so components read
  * `property.price` instead of `property.propertyFields.price`.
  */
-export const PropertySchema = z
-  .object({
-    title: z.string(),
-    slug: z.string(),
-    propertyFields: PropertyFieldsSchema,
-  })
-  .transform(({ title, slug, propertyFields }) => ({
-    title,
-    slug,
-    ...propertyFields,
-  }))
+export const PropertySchema = PropertyNodeSchema.transform(({ title, slug, propertyFields }) => ({
+  title,
+  slug,
+  ...propertyFields,
+}))
 
 export type Property = z.infer<typeof PropertySchema>
+
+/**
+ * The detail page additionally needs the post body, which lives on the post
+ * itself rather than in the ACF group. Cards never ask for it: fetching a full
+ * description for every result would be wasted bytes on the listings page.
+ */
+export const PropertyDetailSchema = PropertyNodeSchema.extend({
+  content: z.string().nullable(),
+
+  // Which language WordPress actually served, so the caller can check it
+  // against the language the URL asked for.
+  language: z
+    .object({ code: z.string() })
+    .nullable()
+    .transform((value) => value?.code ?? null),
+}).transform(({ title, slug, content, language, propertyFields }) => ({
+  title,
+  slug,
+  content,
+  languageCode: language,
+  ...propertyFields,
+}))
+
+export type PropertyDetail = z.infer<typeof PropertyDetailSchema>
 
 export const NeighborhoodSchema = z.object({
   title: z.string(),
