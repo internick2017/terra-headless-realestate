@@ -45,7 +45,12 @@ MSYS_NO_PATHCONV=1 docker compose exec -T wpcli wp --allow-root \
 
 `setup.sh` and `seed.php` are both idempotent and are the only supported way to build the
 environment: there are no manual steps to remember, and a lost Docker volume costs one command
-rather than an afternoon. Re-running the seed also backfills anything added to it since.
+rather than an afternoon.
+
+The seed is declarative rather than write-once. Posts are created only if missing, but every
+field hanging off them is re-applied on each run, so editing a value in `seed.php` and re-running
+reconciles the database with the file. Backfilling only what was absent is how the coordinates in
+that file once stayed months out of date in an environment that had already been seeded.
 
 The `MSYS_NO_PATHCONV=1` prefix is only needed on Git Bash, which otherwise rewrites the
 container path into a Windows one.

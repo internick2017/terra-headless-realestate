@@ -22,6 +22,14 @@ if ( ! defined( 'WP_CLI' ) ) {
 // Gallery artwork is drawn locally rather than downloaded; see images.php.
 require_once __DIR__ . '/images.php';
 
+/*
+ * Terra is a fictional town, but its coordinates are not arbitrary: they sit in
+ * Francisco Beltrao, Parana, so the map on a listing agrees with its Portuguese
+ * address instead of dropping a pin in New Jersey, which is where the first
+ * pass of this seed put them. Two clusters, matching the two neighborhoods:
+ * Centro on the town centre, Beira-Rio along the Marrecas.
+ */
+
 /* ---------------------------------------------------------------------
  * Helpers
  * ------------------------------------------------------------------- */
@@ -41,6 +49,44 @@ function terra_seed_find_by_key( $seed_key, $post_type ) {
 		)
 	);
 	return $existing ? (int) $existing[0] : 0;
+}
+
+/**
+ * Write every ACF field of a property onto its two language posts.
+ *
+ * Called for new and existing posts alike, which is what makes the seed
+ * declarative: this file is the source of truth, and a re-run reconciles the
+ * database with it rather than only filling in what is missing.
+ */
+function terra_seed_apply_property_fields( $en_id, $pt_id, $p ) {
+	$fields = $p['fields'];
+
+	// One set of images per property, shared by both languages: it is the same
+	// building whichever language you read about it in.
+	$gallery_ids = terra_img_attach_gallery( $p['seed_key'], $p['en']['title'], $fields['propertyType'] );
+
+	// Fields shared between the EN and PT posts (price, specs, agent, coordinates, ...).
+	foreach ( array( $en_id, $pt_id ) as $post_id ) {
+		update_field( 'price', $fields['price'], $post_id );
+		update_field( 'currency', $fields['currency'], $post_id );
+		update_field( 'operation', $fields['operation'], $post_id );
+		update_field( 'propertyType', $fields['propertyType'], $post_id );
+		update_field( 'bedrooms', $fields['bedrooms'], $post_id );
+		update_field( 'bathrooms', $fields['bathrooms'], $post_id );
+		update_field( 'areaM2', $fields['areaM2'], $post_id );
+		update_field( 'latitude', $fields['latitude'], $post_id );
+		update_field( 'longitude', $fields['longitude'], $post_id );
+		update_field( 'status', $fields['status'], $post_id );
+		update_field( 'agentName', $fields['agentName'], $post_id );
+		update_field( 'agentEmail', $fields['agentEmail'], $post_id );
+		update_field( 'gallery', $gallery_ids, $post_id );
+	}
+
+	// Language-specific text fields.
+	update_field( 'address', $fields['address']['en'], $en_id );
+	update_field( 'address', $fields['address']['pt'], $pt_id );
+	update_field( 'neighborhoodName', $fields['neighborhoodName']['en'], $en_id );
+	update_field( 'neighborhoodName', $fields['neighborhoodName']['pt'], $pt_id );
 }
 
 /**
@@ -175,8 +221,8 @@ $properties = array(
 				'en' => 'Downtown',
 				'pt' => 'Centro',
 			),
-			'latitude'         => 40.7128,
-			'longitude'        => -74.0060,
+			'latitude'         => -26.0783,
+			'longitude'        => -53.0552,
 			'status'           => 'available',
 			'agentName'        => 'Maria Silva',
 			'agentEmail'       => 'maria.silva@terrahomes.example',
@@ -208,8 +254,8 @@ $properties = array(
 				'en' => 'Riverside',
 				'pt' => 'Beira-Rio',
 			),
-			'latitude'         => 40.7357,
-			'longitude'        => -74.0247,
+			'latitude'         => -26.0672,
+			'longitude'        => -53.0431,
 			'status'           => 'available',
 			'agentName'        => 'Carlos Mendes',
 			'agentEmail'       => 'carlos.mendes@terrahomes.example',
@@ -241,8 +287,8 @@ $properties = array(
 				'en' => 'Downtown',
 				'pt' => 'Centro',
 			),
-			'latitude'         => 40.7148,
-			'longitude'        => -74.0068,
+			'latitude'         => -26.0801,
+			'longitude'        => -53.0563,
 			'status'           => 'available',
 			'agentName'        => 'Maria Silva',
 			'agentEmail'       => 'maria.silva@terrahomes.example',
@@ -274,8 +320,8 @@ $properties = array(
 				'en' => 'Downtown',
 				'pt' => 'Centro',
 			),
-			'latitude'         => 40.7135,
-			'longitude'        => -74.0055,
+			'latitude'         => -26.0790,
+			'longitude'        => -53.0541,
 			'status'           => 'available',
 			'agentName'        => 'Ana Costa',
 			'agentEmail'       => 'ana.costa@terrahomes.example',
@@ -307,8 +353,8 @@ $properties = array(
 				'en' => 'Riverside',
 				'pt' => 'Beira-Rio',
 			),
-			'latitude'         => 40.7368,
-			'longitude'        => -74.0261,
+			'latitude'         => -26.0684,
+			'longitude'        => -53.0447,
 			'status'           => 'reserved',
 			'agentName'        => 'Carlos Mendes',
 			'agentEmail'       => 'carlos.mendes@terrahomes.example',
@@ -340,8 +386,8 @@ $properties = array(
 				'en' => 'Downtown',
 				'pt' => 'Centro',
 			),
-			'latitude'         => 40.7141,
-			'longitude'        => -74.0059,
+			'latitude'         => -26.0796,
+			'longitude'        => -53.0549,
 			'status'           => 'available',
 			'agentName'        => 'Ana Costa',
 			'agentEmail'       => 'ana.costa@terrahomes.example',
@@ -373,8 +419,8 @@ $properties = array(
 				'en' => 'Riverside',
 				'pt' => 'Beira-Rio',
 			),
-			'latitude'         => 40.7361,
-			'longitude'        => -74.0253,
+			'latitude'         => -26.0677,
+			'longitude'        => -53.0438,
 			'status'           => 'available',
 			'agentName'        => 'Carlos Mendes',
 			'agentEmail'       => 'carlos.mendes@terrahomes.example',
@@ -406,8 +452,8 @@ $properties = array(
 				'en' => 'Riverside',
 				'pt' => 'Beira-Rio',
 			),
-			'latitude'         => 40.7372,
-			'longitude'        => -74.0269,
+			'latitude'         => -26.0689,
+			'longitude'        => -53.0455,
 			'status'           => 'sold',
 			'agentName'        => 'Ana Costa',
 			'agentEmail'       => 'ana.costa@terrahomes.example',
@@ -425,62 +471,32 @@ foreach ( $properties as $p ) {
 	$existing_en = terra_seed_find_by_key( $en_key, 'property' );
 	$existing_pt = terra_seed_find_by_key( $pt_key, 'property' );
 
-	if ( $existing_en && $existing_pt ) {
-		// The post already exists, but galleries were added to this script later,
-		// so top them up rather than leaving older seeds without images.
-		$gallery_ids = terra_img_attach_gallery(
-			$p['seed_key'],
-			$p['en']['title'],
-			$p['fields']['propertyType']
-		);
-		foreach ( array( $existing_en, $existing_pt ) as $post_id ) {
-			update_field( 'gallery', $gallery_ids, $post_id );
-		}
+	$already_seeded = $existing_en && $existing_pt;
 
-		WP_CLI::log(
-			"Skipping property '{$p['en']['title']}' (already seeded: EN #{$existing_en}, PT #{$existing_pt}); "
-			. count( $gallery_ids ) . ' gallery image(s) ensured'
-		);
+	if ( $already_seeded ) {
+		$en_id = $existing_en;
+		$pt_id = $existing_pt;
+	} else {
+		$en_id = terra_seed_insert_post( $en_key, 'property', $p['en']['title'], $p['en']['description'], 'en' );
+		$pt_id = terra_seed_insert_post( $pt_key, 'property', $p['pt']['title'], $p['pt']['description'], 'pt' );
+
+		terra_seed_link_post_translations( $en_id, $pt_id );
+	}
+
+	// The fields are re-applied whether or not the post is new. Skipping them
+	// was how the coordinates in this file stayed months out of date in an
+	// already-seeded environment: the values here changed and nothing read
+	// them again. Only the post itself is created once; everything hanging off
+	// it is declared, so a re-run makes the database match this file.
+	terra_seed_apply_property_fields( $en_id, $pt_id, $p );
+
+	if ( $already_seeded ) {
+		WP_CLI::log( "Refreshed property '{$p['en']['title']}' (EN #{$en_id} / PT #{$pt_id})" );
 		$skipped_properties++;
-		continue;
+	} else {
+		WP_CLI::log( "Seeded property '{$p['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
+		$seeded_properties++;
 	}
-
-	$en_id = terra_seed_insert_post( $en_key, 'property', $p['en']['title'], $p['en']['description'], 'en' );
-	$pt_id = terra_seed_insert_post( $pt_key, 'property', $p['pt']['title'], $p['pt']['description'], 'pt' );
-
-	terra_seed_link_post_translations( $en_id, $pt_id );
-
-	$fields = $p['fields'];
-
-	// One set of images per property, shared by both languages: it is the same
-	// building whichever language you read about it in.
-	$gallery_ids = terra_img_attach_gallery( $p['seed_key'], $p['en']['title'], $fields['propertyType'] );
-
-	// Fields shared between the EN and PT posts (price, specs, agent, coordinates, ...).
-	foreach ( array( $en_id, $pt_id ) as $post_id ) {
-		update_field( 'price', $fields['price'], $post_id );
-		update_field( 'currency', $fields['currency'], $post_id );
-		update_field( 'operation', $fields['operation'], $post_id );
-		update_field( 'propertyType', $fields['propertyType'], $post_id );
-		update_field( 'bedrooms', $fields['bedrooms'], $post_id );
-		update_field( 'bathrooms', $fields['bathrooms'], $post_id );
-		update_field( 'areaM2', $fields['areaM2'], $post_id );
-		update_field( 'latitude', $fields['latitude'], $post_id );
-		update_field( 'longitude', $fields['longitude'], $post_id );
-		update_field( 'status', $fields['status'], $post_id );
-		update_field( 'agentName', $fields['agentName'], $post_id );
-		update_field( 'agentEmail', $fields['agentEmail'], $post_id );
-		update_field( 'gallery', $gallery_ids, $post_id );
-	}
-
-	// Language-specific text fields.
-	update_field( 'address', $fields['address']['en'], $en_id );
-	update_field( 'address', $fields['address']['pt'], $pt_id );
-	update_field( 'neighborhoodName', $fields['neighborhoodName']['en'], $en_id );
-	update_field( 'neighborhoodName', $fields['neighborhoodName']['pt'], $pt_id );
-
-	WP_CLI::log( "Seeded property '{$p['en']['title']}' -> EN #{$en_id} / PT #{$pt_id}" );
-	$seeded_properties++;
 }
 
 /* ---------------------------------------------------------------------
