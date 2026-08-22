@@ -84,6 +84,34 @@ npx tsc --noEmit
 - **`docs/`** — the design document and a report per task, including the decisions and the dead
   ends behind them.
 
+## Deployment
+
+The two halves deploy independently, and the order matters: the front end queries the CMS at
+**build** time (`generateStaticParams`, the sitemap, `/llms.txt`), so a Vercel build against a
+WordPress that is only reachable on localhost fails rather than degrading.
+
+**1. WordPress, on a public host.** A subdomain, a normal WordPress install, then the four
+plugins this project needs, WPGraphQL, ACF, Polylang, and WPGraphQL for Polylang, plus the
+`terra-realestate` plugin from `wp-plugin/`. `dev/setup.sh` names the exact plugin slugs and is
+the reference for what has to be present. Run `dev/seed.php` through WP-CLI once the plugins are
+active. Confirm `https://<subdomain>/graphql` answers before going further.
+
+**2. Next.js, on Vercel.** Import the repository, set the root directory to `frontend/`, and set:
+
+| Variable | Value |
+| --- | --- |
+| `WP_GRAPHQL_URL` | `https://<subdomain>/graphql` |
+| `NEXT_PUBLIC_SITE_URL` | the Vercel or custom domain, no trailing slash |
+| `RESEND_API_KEY`, `LEAD_FROM_EMAIL`, `LEAD_TO_EMAIL` | optional; without them enquiries are logged, not emailed |
+| `NEXT_PUBLIC_STATIC_MAP_URL` | optional; a paid static-map provider instead of OSM tiles |
+
+`NEXT_PUBLIC_SITE_URL` is not cosmetic: hreflang, the canonical links, the sitemap and the
+enquiry emails all build absolute URLs from it, and they are wrong without it.
+
+**3. Afterwards.** Check `/sitemap.xml`, `/robots.txt` and `/llms.txt` respond, run a listing
+through Google's Rich Results test, and run Lighthouse against the deployed front end. None of
+that is meaningful against localhost.
+
 ## Status
 
 Feature-complete locally. Built: the CMS and its content model, the bilingual seed with images,
