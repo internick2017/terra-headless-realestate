@@ -14,9 +14,13 @@ WordPress (:8930)                         Next.js (:3000)
 ├── terra-realestate plugin               ├── proxy.ts        → /  redirects to /en
 │   ├── property CPT                      ├── [locale]/       → /en and /pt
 │   ├── ACF fields (in PHP, not clicks)   │   ├── layout      → <html lang>, header, switcher
-│   └── Polylang wiring                   │   └── page        → featured listings
-├── WPGraphQL  ──────── GraphQL ───────►  ├── lib/queries.ts  → typed queries
-└── seeded demo content                   └── lib/types.ts    → Zod validation at the edge
+│   └── Polylang wiring                   │   ├── page        → hero, featured, neighborhoods
+├── WPGraphQL  ──────── GraphQL ───────►  │   ├── properties  → filters + detail + map
+└── seeded demo content                   │   └── neighborhoods
+                                          ├── api/lead        → enquiries out by email
+                                          ├── sitemap · robots · llms.txt
+                                          ├── lib/queries.ts  → typed queries
+                                          └── lib/types.ts    → Zod validation at the edge
 ```
 
 Everything the CMS returns is validated by Zod before it reaches a component, so a change on the
@@ -77,11 +81,14 @@ npx tsc --noEmit
 
 ## Status
 
-Built: the CMS and its content model, the bilingual seed with images, the typed GraphQL client,
-locale routing with a language switcher, the home page, the listings page with URL-driven
-filters, and property detail pages with a gallery and a location map.
+Feature-complete locally. Built: the CMS and its content model, the bilingual seed with images,
+the typed GraphQL client, locale routing with a language switcher, the home page, the listings
+page with URL-driven filters, property detail pages with a gallery and a location map, the lead
+capture form, the neighborhood articles, and the SEO surface — JSON-LD, sitemap, robots and
+`/llms.txt`.
 
-Next: the lead form, neighborhood articles, then SEO and deployment.
+Next: deployment (WordPress on a subdomain, the front end on Vercel), then the portfolio card and
+the case study.
 
 ## License
 
