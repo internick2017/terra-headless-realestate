@@ -4,7 +4,7 @@ import {
   PropertySchema,
   fromPllLang,
   isLocale,
-  resolvePropertyRoute,
+  resolveTranslatedRoute,
   toPllLang,
 } from './types'
 
@@ -174,33 +174,33 @@ describe('PropertyDetailSchema', () => {
   })
 })
 
-describe('resolvePropertyRoute', () => {
+describe('resolveTranslatedRoute', () => {
   const english = {
     languageCode: 'EN',
     translations: [{ slug: 'vila-na-beira-rio', languageCode: 'PT' }],
   }
 
   it('renders when the URL already asks for the language the listing is in', () => {
-    expect(resolvePropertyRoute(english, 'en')).toEqual({ action: 'render' })
+    expect(resolveTranslatedRoute(english, 'en')).toEqual({ action: 'render' })
   })
 
   it('redirects to the translation when the URL asks for the other language', () => {
     // What the language switcher produces: it swaps /en for /pt but leaves the
     // English slug in place, so this is the common case, not an edge one.
-    expect(resolvePropertyRoute(english, 'pt')).toEqual({
+    expect(resolveTranslatedRoute(english, 'pt')).toEqual({
       action: 'redirect',
       slug: 'vila-na-beira-rio',
     })
   })
 
   it('404s when the listing has no version in the requested language', () => {
-    expect(resolvePropertyRoute({ languageCode: 'EN', translations: [] }, 'pt')).toEqual({
+    expect(resolveTranslatedRoute({ languageCode: 'EN', translations: [] }, 'pt')).toEqual({
       action: 'notFound',
     })
   })
 
   it('404s rather than guessing when the listing has no language at all', () => {
-    expect(resolvePropertyRoute({ languageCode: null, translations: [] }, 'en')).toEqual({
+    expect(resolveTranslatedRoute({ languageCode: null, translations: [] }, 'en')).toEqual({
       action: 'notFound',
     })
   })
@@ -211,6 +211,6 @@ describe('resolvePropertyRoute', () => {
       translations: [{ slug: 'villa-au-bord-de-riviere', languageCode: 'FR' }],
     }
 
-    expect(resolvePropertyRoute(withFrench, 'pt')).toEqual({ action: 'notFound' })
+    expect(resolveTranslatedRoute(withFrench, 'pt')).toEqual({ action: 'notFound' })
   })
 })

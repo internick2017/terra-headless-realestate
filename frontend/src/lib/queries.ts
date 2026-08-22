@@ -1,8 +1,10 @@
 import {
+  NeighborhoodSchema,
   PropertyDetailSchema,
   PropertySchema,
   toPllLang,
   type Locale,
+  type Neighborhood,
   type Property,
   type PropertyDetail,
 } from './types'
@@ -145,4 +147,87 @@ export async function getPropertySlugs(locale: Locale, first = 100): Promise<str
   })
 
   return data.properties.nodes.map((node) => node.slug)
+}
+
+/**
+ * Neighborhood articles are ordinary posts filed under a category, and Polylang
+ * translates the category term along with the posts — so the English site asks
+ * for "Neighborhoods" and the Portuguese one for "Bairros". Asking for the
+ * wrong name simply returns nothing, which is why the names live here rather
+ * than being guessed.
+ *
+ * Unlike `name`, `categoryName` does compose with the language filter; that was
+ * measured, not assumed, after `name` turned out to override it.
+ */
+const NEIGHBORHOOD_CATEGORY: Record<Locale, string> = {
+  en: 'Neighborhoods',
+  pt: 'Bairros',
+}
+
+const NEIGHBORHOOD_FIELDS = `
+  title
+  slug
+  excerpt
+  language {
+    code
+  }
+  translations {
+    slug
+    language {
+      code
+    }
+  }
+`
+
+export const NEIGHBORHOODS_QUERY = `
+  query Neighborhoods($language: LanguageCodeFilterEnum!, $category: String!, $first: Int!) {
+    posts(where: { language: $language, categoryName: $category }, first: $first) {
+      nodes {
+        ${NEIGHBORHOOD_FIELDS}
+        content
+      }
+    }
+  }
+`
+
+/** Every neighborhood article in one language, for the index page. */
+export async function getNeighborhoods(locale: Locale, first = 50): Promise<Neighborhood[]> {
+  const data = await wpQuery<{ posts: { nodes: unknown[] } }>(NEIGHBORHOODS_QUERY, {
+    language: toPllLang(locale),
+    category: NEIGHBORHOOD_CATEGORY[locale],
+    first,
+  })
+
+  return data.posts.nodes.map((node) => NeighborhoodSchema.parse(node))
+}
+
+export const NEIGHBORHOOD_QUERY = `
+  query Neighborhood($slug: String!) {
+    posts(where: { name: $slug }, first: 1) {
+      nodes {
+        ${NEIGHBORHOOD_FIELDS}
+        content
+      }
+    }
+  }
+`
+
+/**
+ * One article by slug, in whatever language it is. Same deal as getProperty:
+ * the language cannot be part of the query, so the answer carries its own and
+ * resolveTranslatedRoute decides what the page does with it.
+ */
+export async function getNeighborhood(slug: string): Promise<Neighborhood | null> {
+  const data = await wpQuery<{ posts: { nodes: unknown[] } }>(NEIGHBORHOOD_QUERY, { slug })
+
+  const node = data.posts.nodes[0]
+
+  return node ? NeighborhoodSchema.parse(node) : null
+}
+
+/** Slugs for generateStaticParams, in both languages. */
+export async function getNeighborhoodSlugs(locale: Locale): Promise<string[]> {
+  const neighborhoods = await getNeighborhoods(locale)
+
+  return neighborhoods.map((neighborhood) => neighborhood.slug)
 }

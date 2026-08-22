@@ -75,6 +75,13 @@ const en = {
     agent: 'Your agent',
     priceOnRequest: 'Price on request',
   },
+  neighborhoods: {
+    title: 'Neighborhoods',
+    intro: 'What it is like to live in each part of town, written by people who work here.',
+    back: 'Back to neighborhoods',
+    readMore: 'Read more',
+    empty: 'No neighborhood articles yet.',
+  },
   lead: {
     title: 'Ask about this property',
     name: 'Your name',
@@ -158,6 +165,13 @@ const pt: Dict = {
     noLocation: 'A localização exata deste imóvel está disponível sob consulta.',
     agent: 'Seu corretor',
     priceOnRequest: 'Preço sob consulta',
+  },
+  neighborhoods: {
+    title: 'Bairros',
+    intro: 'Como é morar em cada parte da cidade, escrito por quem trabalha aqui.',
+    back: 'Voltar aos bairros',
+    readMore: 'Ler mais',
+    empty: 'Ainda não há artigos sobre bairros.',
   },
   lead: {
     title: 'Pergunte sobre este imóvel',

@@ -10,9 +10,9 @@ import { getPropertySlugs, getProperty } from '@/lib/queries'
 import { propertySpecs } from '@/lib/specs'
 import {
   LOCALES,
-  fromPllLang,
+  alternateLinks,
   isLocale,
-  resolvePropertyRoute,
+  resolveTranslatedRoute,
   type PropertyDetail,
 } from '@/lib/types'
 
@@ -59,7 +59,7 @@ async function load(params: Promise<{ locale: string; slug: string }>) {
     return null
   }
 
-  const route = resolvePropertyRoute(property, locale)
+  const route = resolveTranslatedRoute(property, locale)
 
   if (route.action === 'notFound') {
     return null
@@ -112,17 +112,11 @@ export async function generateMetadata({
 
   // hreflang, built from Polylang's own links rather than by swapping the
   // locale segment: the translated listing has its own slug.
-  const languages: Record<string, string> = {
-    [locale]: `/${locale}/properties/${property.slug}`,
-  }
-
-  for (const translation of property.translations) {
-    const other = fromPllLang(translation.languageCode)
-
-    if (other) {
-      languages[other] = `/${other}/properties/${translation.slug}`
-    }
-  }
+  const languages = alternateLinks(
+    property,
+    locale,
+    (target, slug) => `/${target}/properties/${slug}`,
+  )
 
   return {
     title: property.title,
