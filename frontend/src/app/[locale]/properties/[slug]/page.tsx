@@ -7,6 +7,8 @@ import { PropertyMap } from '@/components/property-map'
 import { formatPrice } from '@/lib/format'
 import { getDict } from '@/lib/i18n'
 import { getPropertySlugs, getProperty } from '@/lib/queries'
+import { propertyJsonLd } from '@/lib/schema'
+import { absoluteUrl } from '@/lib/site'
 import { propertySpecs } from '@/lib/specs'
 import {
   LOCALES,
@@ -155,8 +157,20 @@ export default async function PropertyPage({
   const specs = propertySpecs(property, dict, locale)
   const price = formatPrice(property.price, property.currency, locale)
 
+  const canonical = absoluteUrl(`/${locale}/properties/${property.slug}`)
+
   return (
     <article>
+      {/* Machine-readable twin of everything below, for search engines and
+          assistants. Emitted server-side so a crawler that runs no JavaScript
+          still sees it. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(propertyJsonLd(property, locale, canonical)),
+        }}
+      />
+
       <Link
         href={`/${locale}/properties`}
         className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"

@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getDict } from '@/lib/i18n'
 import { getNeighborhood, getNeighborhoodSlugs } from '@/lib/queries'
+import { neighborhoodJsonLd } from '@/lib/schema'
+import { absoluteUrl } from '@/lib/site'
 import { LOCALES, alternateLinks, isLocale, resolveTranslatedRoute } from '@/lib/types'
 
 export const revalidate = 3600
@@ -107,8 +109,17 @@ export default async function NeighborhoodPage({
 
   const dict = getDict(locale)
 
+  const canonical = absoluteUrl(`/${locale}/neighborhoods/${neighborhood.slug}`)
+
   return (
     <article className="mx-auto max-w-2xl">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(neighborhoodJsonLd(neighborhood, locale, canonical)),
+        }}
+      />
+
       <Link
         href={`/${locale}/neighborhoods`}
         className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
