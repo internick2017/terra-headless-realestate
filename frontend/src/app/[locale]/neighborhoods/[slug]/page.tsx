@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { toSummary } from '@/lib/html'
 import { getDict } from '@/lib/i18n'
 import { getNeighborhood, getNeighborhoodSlugs } from '@/lib/queries'
 import { neighborhoodJsonLd } from '@/lib/schema'
@@ -48,19 +49,6 @@ async function load(params: Promise<{ locale: string; slug: string }>) {
   }
 }
 
-function toSummary(excerpt: string | null, fallback: string): string {
-  const text = (excerpt ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  if (!text) {
-    return fallback
-  }
-
-  return text.length > 160 ? `${text.slice(0, 157).trimEnd()}…` : text
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -74,7 +62,7 @@ export async function generateMetadata({
 
   const { locale, neighborhood } = loaded
   const dict = getDict(locale)
-  const description = toSummary(neighborhood.excerpt, dict.neighborhoods.intro)
+  const description = toSummary(neighborhood.excerpt) || dict.neighborhoods.intro
 
   const languages = alternateLinks(
     neighborhood,

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { toPlainText } from '@/lib/html'
 import { getDict } from '@/lib/i18n'
 import { getNeighborhoods } from '@/lib/queries'
 import { LOCALES, isLocale } from '@/lib/types'
@@ -26,14 +27,6 @@ export async function generateMetadata({
   const dict = getDict(locale)
 
   return { title: dict.neighborhoods.title, description: dict.neighborhoods.intro }
-}
-
-/** Strip the HTML WordPress wraps an excerpt in, so it can sit in a card. */
-function toSummary(excerpt: string | null): string {
-  return (excerpt ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
 }
 
 export default async function NeighborhoodsPage({
@@ -73,7 +66,7 @@ export default async function NeighborhoodsPage({
               </h2>
 
               <p className="mt-2 line-clamp-4 text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                {toSummary(neighborhood.excerpt)}
+                {toPlainText(neighborhood.excerpt)}
               </p>
 
               <Link

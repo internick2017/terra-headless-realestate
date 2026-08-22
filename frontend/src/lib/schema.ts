@@ -1,3 +1,4 @@
+import { toPlainText } from './html'
 import type { Locale, Neighborhood, PropertyDetail } from './types'
 
 /**
@@ -40,7 +41,7 @@ function compact<T extends Record<string, unknown>>(object: T): Partial<T> {
 }
 
 export function propertyJsonLd(property: PropertyDetail, locale: Locale, url: string) {
-  const description = (property.content ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  const description = toPlainText(property.content)
 
   const address = compact({
     '@type': 'PostalAddress',
@@ -98,10 +99,7 @@ export function propertyJsonLd(property: PropertyDetail, locale: Locale, url: st
 }
 
 export function neighborhoodJsonLd(neighborhood: Neighborhood, locale: Locale, url: string) {
-  const description = (neighborhood.excerpt ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const description = toPlainText(neighborhood.excerpt)
 
   return compact({
     '@context': 'https://schema.org',

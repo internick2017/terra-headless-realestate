@@ -5,18 +5,13 @@ import { LeadForm } from '@/components/lead-form'
 import { PropertyGallery } from '@/components/property-gallery'
 import { PropertyMap } from '@/components/property-map'
 import { formatPrice } from '@/lib/format'
+import { toSummary } from '@/lib/html'
 import { getDict } from '@/lib/i18n'
 import { getPropertySlugs, getProperty } from '@/lib/queries'
 import { propertyJsonLd } from '@/lib/schema'
 import { absoluteUrl } from '@/lib/site'
 import { propertySpecs } from '@/lib/specs'
-import {
-  LOCALES,
-  alternateLinks,
-  isLocale,
-  resolveTranslatedRoute,
-  type PropertyDetail,
-} from '@/lib/types'
+import { LOCALES, alternateLinks, isLocale, resolveTranslatedRoute } from '@/lib/types'
 
 /**
  * ISR: listings change rarely, so every visitor gets a static page, and an edit
@@ -74,23 +69,6 @@ async function load(params: Promise<{ locale: string; slug: string }>) {
   return { locale, property, redirectTo: null }
 }
 
-/**
- * Strip the WordPress body down to a description. `content` is HTML, and a meta
- * description with tags in it is worse than none.
- */
-function toDescription(property: PropertyDetail, fallback: string): string {
-  const text = (property.content ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  if (!text) {
-    return fallback
-  }
-
-  return text.length > 160 ? `${text.slice(0, 157).trimEnd()}…` : text
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -110,7 +88,7 @@ export async function generateMetadata({
 
   const dict = getDict(locale)
   const cover = property.gallery[0]
-  const description = toDescription(property, dict.tagline)
+  const description = toSummary(property.content) || dict.tagline
 
   // hreflang, built from Polylang's own links rather than by swapping the
   // locale segment: the translated listing has its own slug.
