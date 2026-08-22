@@ -10,3 +10,6 @@ wp-plugin/vendor/
 Thumbs.db
 # Tooling scratch
 .superpowers/
+
+# Built plugin zip, produced on demand
+terra-realestate.zip
