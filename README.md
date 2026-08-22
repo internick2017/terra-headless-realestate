@@ -1,5 +1,7 @@
 # Terra — Headless Real Estate Demo
 
+**Live: <https://terra-headless-realestate.vercel.app>** · CMS: <https://terra-cms.nickgranados.com>
+
 A bilingual (EN/PT) real estate site built headless: WordPress as the content back end, exposed
 over GraphQL, with a Next.js front end. Listings, neighborhood articles and every UI string exist
 in both languages, and each language has its own URL space.
@@ -126,14 +128,13 @@ that is meaningful against localhost.
 
 ## Status
 
-Feature-complete locally. Built: the CMS and its content model, the bilingual seed with images,
+Deployed and verified end to end. Built: the CMS and its content model, the bilingual seed with images,
 the typed GraphQL client, locale routing with a language switcher, the home page, the listings
 page with URL-driven filters, property detail pages with a gallery and a location map, the lead
 capture form, the neighborhood articles, and the SEO surface — JSON-LD, sitemap, robots and
 `/llms.txt`.
 
-Next: deployment (WordPress on a subdomain, the front end on Vercel), then the portfolio card and
-the case study.
+Next: the portfolio card and the case study.
 
 ## License
 

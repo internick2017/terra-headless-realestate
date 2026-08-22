@@ -13,3 +13,6 @@ Thumbs.db
 
 # Built plugin zip, produced on demand
 terra-realestate.zip
+
+# Vercel project link (machine-local)
+.vercel/
